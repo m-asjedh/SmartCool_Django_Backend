@@ -1,0 +1,65 @@
+from django.http import JsonResponse
+import RPi.GPIO as GPIO
+from hx711 import HX711
+import Adafruit_DHT
+
+# Initialize HX711 for both load cells
+GPIO.setmode(GPIO.BCM)
+
+# Load cell 1 (5kg)
+hx1 = HX711(dout_pin=6, pd_sck_pin=5)
+hx1.zero()
+input('Place known weight on scale 1 & press Enter: ')
+reading1 = hx1.get_data_mean(readings=100)
+value1 = 40  # Replace with the known weight value for calibration
+ratio1 = reading1 / value1
+hx1.set_scale_ratio(ratio1)
+
+# Load cell 2 (10kg)
+hx2 = HX711(dout_pin=24, pd_sck_pin=23)
+hx2.zero()
+input('Place known weight on scale 2 & press Enter: ')
+reading2 = hx2.get_data_mean(readings=100)
+value2 = 40  # Replace with the known weight value for calibration
+ratio2 = reading2 / value2
+hx2.set_scale_ratio(ratio2)
+
+# Temperature sensor configuration
+sensor = Adafruit_DHT.DHT22
+pin = 4  # GPIO pin connected to the data pin of DHT22
+
+def weight_view(request):
+    # Get weight from load cell 1
+    weight1 = hx1.get_weight_mean()
+    # Calculate quantity for product 1
+    quantity1 = weight1 / 40
+
+    # Get weight from load cell 2
+    weight2 = hx2.get_weight_mean()
+    # Calculate quantity for product 2
+    quantity2 = weight2 / 40
+
+    # Return the weights and quantities in the response
+    return JsonResponse({
+        'weight1': round(weight1),
+        'quantity1': round(quantity1),
+        'weight2': round(weight2),
+        'quantity2': round(quantity2),
+    })
+
+def temperature_humidity_view(request):
+    # Get temperature and humidity from the DHT22 sensor
+    humidity, temperature = Adafruit_DHT.read_retry(sensor, pin)
+    
+    # Check if the temperature reading was successful
+    if humidity is not None and temperature is not None:
+        temperature_data = {
+            'temperature': round(temperature, 1),
+            'humidity': round(humidity, 1)
+        }
+    else:
+        temperature_data = {'error': 'Failed to get temperature reading'}
+
+    # Return temperature and humidity data in the response
+    return JsonResponse(temperature_data)
+

@@ -1,0 +1,7 @@
+from django.urls import path
+from .views import weight_view, temperature_humidity_view
+
+urlpatterns = [
+    path('weights/', weight_view, name='weight_view'),  # Endpoint for weight data
+    path('temperature/', temperature_humidity_view, name='temperature_humidity_view'),  # Endpoint for temperature and humidity data
+]
